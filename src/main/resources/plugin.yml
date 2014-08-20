@@ -1,0 +1,18 @@
+name: MonoChest
+main: me.myxomopx.MonoChest.Main
+version: 1.0
+author: MYXOMOPX
+description: Allow you enter to the chests.
+depend: [GroovyLoader]
+
+commands:
+  monoExit:
+    description: exit from chest
+    aliases: [mexit,mleave,monoLeave]
+
+permissions:
+    monochest.build.*:
+      description: allows you build monochest
+      childrens:
+        monochest.build.ender
+        monochest.build.default

@@ -1,0 +1,20 @@
+## world where chests will generates.
+startPosition:
+  x: 10
+  y: 20
+  z: 10
+  world: MonoChestWorld
+
+
+## how deeper player can go
+maxEnters: 5
+
+## if it's = true
+## it will change:
+## doFireTick to false,
+## mobGriefing to false,
+## doMobSpawning to false,
+## doDaylightCycle to false,
+## and time to 5000
+## in world, where chests will be generate
+changeRules: true
