@@ -21,7 +21,9 @@ class FileManager {
     static final File monoChestsFile = new File("plugins/MonoChest/svc/monoChests.yml")
     static final File enderChestsFile = new File("plugins/MonoChest/svc/playerEnderRoomMap.yml")
     static final File playerTeleportBackFile = new File("plugins/MonoChest/svc/playerTeleportStack.yml")
-    static final File configFile = new File("plugins/MonoChest/Config.yml")
+    static final File configFile = new File("plugins/MonoChest/config.yml")
+    static final File messagesFile = new File("plugins/MonoChest/messages.yml")
+
 
     static List<ChestRoom> loadChestRooms(){
         if(!enderChestsFile.exists()) return []
@@ -30,11 +32,7 @@ class FileManager {
             chestRoomsFile.withInputStream { InputStream stream ->
                 List loadedList = yaml.load(stream) as List
                 loadedList.each{ HashMap map ->
-                    double x = map.x;
-                    double y = map.y;
-                    double z = map.z;
-                    String world = map.world;
-                    Location loc = new Location(Bukkit.getWorld(world),x,y,z);
+                    Location loc = locationFromMap(map)
                     UUID id = UUID.fromString(map.id)
                     ChestRoomType type = ChestRoomType.valueOf(map.type as String)
                     result.add(new ChestRoom(type,loc,id))
@@ -53,14 +51,10 @@ class FileManager {
         chestRoomsFile.createNewFile()
         List<HashMap<String,Object>> list = [];
         rooms.each { ChestRoom room ->
-            list.add([
-                    x:room.location.x,
-                    y:room.location.y,
-                    z:room.location.z,
-                    world:room.location.world.name,
-                    id:room.id.toString(),
-                    type:room.type.toString(),
-            ])
+            def map = mapFromLocation(room.location)
+            map["id"] = room.id.toString()
+            map["type"] = room.type.toString()
+            list.add(map)
         }
         chestRoomsFile.withOutputStream {
             String dump = yaml.dump(list);
@@ -79,11 +73,7 @@ class FileManager {
             monoChestsFile.withInputStream { InputStream stream ->
                 List loadedList = yaml.load(stream) as List
                 loadedList.each{ HashMap map ->
-                    double x = map.x;
-                    double y = map.y;
-                    double z = map.z;
-                    String world = map.world;
-                    Block block = new Location(Bukkit.getWorld(world),x,y,z).block;
+                    Block block = locationFromMap(map).block
                     MonoChestType type = MonoChestType.valueOf(map.type)
                     UUID id = UUID.fromString(map.id)
                     result.add(new MonoChest(block,type,id))
@@ -102,14 +92,10 @@ class FileManager {
         monoChestsFile.createNewFile()
         List<HashMap<String,Object>> list = [];
         chests.each { room ->
-            list.add([
-                    x:room.block.x,
-                    y:room.block.y,
-                    z:room.block.z,
-                    world:room.block.world.name,
-                    id:room.id.toString(),
-                    type:room.type.toString(),
-            ])
+            def map = mapFromLocation(room.block.location)
+            map["id"] = room.id.toString()
+            map["type"] = room.type.toString()
+            list.add(map)
         }
         monoChestsFile.withOutputStream {
             String dump = yaml.dump(list);
@@ -166,12 +152,7 @@ class FileManager {
         List<List<Object>> locs = []
         teleports.each { k,v ->
             v.each {MapEntry entry ->
-                locs.add([entry.key.toString(),[
-                        x:entry.value.x,
-                        y:entry.value.y,
-                        z:entry.value.z,
-                        world:entry.value.world.name
-                ]])
+                locs.add([entry.key.toString(),mapFromLocation(entry.value as Location)])
             }
             saveMap[k.toString()] = locs;
 
@@ -199,9 +180,7 @@ class FileManager {
                     v.each { List list ->
                         MapEntry entry = new MapEntry(
                                 UUID.fromString(list[0] as String),
-                                new Location(
-                                        Bukkit.getWorld(list[1].world as String),list[1].x as double,list[1].y as double,list[1].z as double
-                                )
+                                locationFromMap(list[1] as Map)
                         );
 
                         result[playerId].add(entry)
@@ -217,19 +196,34 @@ class FileManager {
     }
 
     public static Map<String,Object> getConfigs(){
-        if(!configFile.exists()) return [:]
+        createConfigIfNotExists()
         configFile.withInputStream { InputStream stream ->
             return  yaml.load(stream) as Map<String,Object>
         }
     }
 
+    public static Map<String,String> getMessages(){
+        createMsgFileIfNotExists()
+        messagesFile.withInputStream { InputStream stream ->
+            return  yaml.load(stream) as Map<String,Object>
+        }
+    }
+
     public static void createConfigIfNotExists(){
-        if(!configFile.exists()){
-            InputStream is = FileManager.class.getClassLoader().getResourceAsStream("config.yml");
-            configFile.getParentFile().mkdirs();
+        createFileIfNotExists(configFile,"config.yml")
+    }
+
+    public static void createMsgFileIfNotExists(){
+        createFileIfNotExists(messagesFile,"messages.yml")
+    }
+
+    private static void createFileIfNotExists(File file, String resource){
+        if(!file.exists()){
+            InputStream is = FileManager.class.getClassLoader().getResourceAsStream(resource);
+            file.getParentFile().mkdirs();
             OutputStream os;
             try {
-                os = new FileOutputStream(configFile)
+                os = new FileOutputStream(file)
                 byte[] buffer = new byte[0x100];
                 int len;
                 while ((len = is.read(buffer)) > 0) {
@@ -239,5 +233,19 @@ class FileManager {
                 os.close();
             }
         }
+    }
+
+    private static Map mapFromLocation(Location loc){
+        return [
+                x:loc.x,
+                y:loc.y,
+                z:loc.z,
+                world:loc.world.name,
+
+        ]
+    }
+
+    private static Location locationFromMap(Map map){
+        return new Location(Bukkit.getWorld(map.world),map.x,map.y,map.z)
     }
 }

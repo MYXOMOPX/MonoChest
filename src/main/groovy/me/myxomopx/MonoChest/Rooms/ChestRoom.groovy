@@ -31,6 +31,10 @@ class ChestRoom {
         new ChestRoom(ChestRoomType.NotReady,l,UUID.randomUUID())
     }
 
+    public Location getLocationForTeleport(){
+        return  location.clone().add(7.5, 1, 2.5)
+    }
+
     public boolean isDestroyed(){
         return type == ChestRoomType.Destroyed
     }

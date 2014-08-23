@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
-        <plugin-version>1.0</plugin-version>
+        <plugin-version>1.1</plugin-version>
 
         <plugin-description>Allow you enter to the chests</plugin-description>
 

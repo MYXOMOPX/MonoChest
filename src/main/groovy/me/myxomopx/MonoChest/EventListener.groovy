@@ -8,6 +8,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.block.Block
+import org.bukkit.block.Chest
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.Action
@@ -17,7 +18,9 @@ import org.bukkit.event.block.BlockPistonExtendEvent
 import org.bukkit.event.block.BlockPistonRetractEvent
 import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityExplodeEvent
+import org.bukkit.event.inventory.InventoryMoveItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 /**
  * Created by OPX on 015 15.08.14.
@@ -35,12 +38,12 @@ class EventListener implements Listener {
             Main.playerTeleportBackMap[event.player.uniqueId] = [] as LinkedList
         }
         if(Main.playerTeleportBackMap[event.player.uniqueId].size() > Main.maxEnters){
-            event.player.sendMessage(Main.prefix + " §6Can't go deeper ;)")
+            Main.sendMessage(event.player,"§6"+Main.messages.cantGoDeeper)
             return
         }
         Main.playerTeleportBackMap[event.player.uniqueId].add(new MapEntry(chest.id, event.player.location))
-        event.player.teleport chest.chestRoom.location.clone().add(7.5, 1, 2.5)
-        event.player.sendMessage(Main.prefix + " §aYou entered to chest!")
+        event.player.teleport chest.chestRoom.getLocationForTeleport()
+        Main.sendMessage(event.player,"§a"+Main.messages.onEnterChest)
         event.player.playSound(event.player.location, Sound.CHEST_OPEN,1,1)
     }
 
@@ -59,7 +62,7 @@ class EventListener implements Listener {
         Block clickedBlock = event.block
         if (!Main.rooms.find { it.walls.contains(clickedBlock) }) return
         event.cancelled = true
-        event.player.sendMessage(Main.prefix + " §4You can't break walls of MonoChest")
+        Main.sendMessage(event.player,"§4"+Main.messages.onBreakWalls)
     }
 
     @EventHandler
@@ -72,7 +75,7 @@ class EventListener implements Listener {
         if (emptyPlace.find { Block b ->
             Main.chests.find{it.block == b} != null
         }) {
-            event.player.sendMessage(Main.prefix + " §4Can't place chest near MonoChest!")
+            Main.sendMessage(event.player,"§4"+Main.messages.cantPlaceChest)
             event.cancelled = true
             return
         }
@@ -82,7 +85,7 @@ class EventListener implements Listener {
 
         if (name == Main.itemNameDefault || name == Main.itemNameEnder) {
             if(emptyPlace.find {it.type == Material.CHEST}){
-                event.player.sendMessage(Main.prefix + " §4Can't place MonoChest near chest!")
+                Main.sendMessage(event.player,"§4"+Main.messages.cantPlaceMonoChest)
                 event.cancelled = true
                 return
             }
@@ -91,7 +94,7 @@ class EventListener implements Listener {
         MonoChestType cType
         if (name == Main.itemNameDefault) {
             if (!event.player.hasPermission("monochest.build.default")) {
-                event.player.sendMessage(Main.prefix + " §4You has not permissions for build Default-MonoChest")
+                Main.sendMessage(event.player,"§4"+Main.messages.noPermissionsForDefault)
                 event.cancelled = true
                 return
             }
@@ -105,7 +108,7 @@ class EventListener implements Listener {
 
         } else if (name == Main.itemNameEnder) {
             if (!event.player.hasPermission("monochest.build.ender")) {
-                event.player.sendMessage(Main.prefix + " §4You has not permissions for build Ender-MonoChest")
+                Main.sendMessage(event.player,"§4"+Main.messages.noPermissionsForEnder)
                 event.cancelled = true
                 return
             }
@@ -169,6 +172,15 @@ class EventListener implements Listener {
         }) event.cancelled = true
     }
 
+    @EventHandler
+    public void onHopToChest(InventoryMoveItemEvent event){
+        Inventory destInv =  event.destination
+        if(!(destInv.holder instanceof Chest)) return
+        Block b = (destInv.holder as Chest).block
+        MonoChest chest = Main.getMonoChest(b)
+        if(chest == null) return
+        event.cancelled = true
+    }
 
 
 

@@ -14,29 +14,11 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ShapedRecipe
 import org.bukkit.plugin.java.JavaPlugin
-import org.codehaus.groovy.reflection.CachedClass
-import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl
 
 /**
  * Created by OPX on 006 06.08.14.
  */
 class Main extends JavaPlugin {
-
-    static {
-        Map<CachedClass, List<MetaMethod>> map = [:]
-        def classLoader = Main.classLoader
-        def resources = classLoader.getResources(MetaClassRegistryImpl.MODULE_META_INF_FILE)
-        resources.each { url ->
-            def properties = new Properties()
-            url.withInputStream { input ->
-                properties.load input
-                def registry = GroovySystem.metaClassRegistry as MetaClassRegistryImpl
-                registry.registerExtensionModuleFromProperties properties, classLoader, map
-            }
-        }
-        map.each { cls, methods -> cls.setNewMopMethods methods }
-    }
-
     private static Main instance;
     static Main getInstance(){
         return instance;
@@ -54,14 +36,14 @@ class Main extends JavaPlugin {
     static Map<UUID,LinkedList<MapEntry>> playerTeleportBackMap = [:]
     static final String itemNameDefault = "§7§lDefault-MonoChest"
     static final String itemNameEnder = "§7§lEnder-MonoChest"
-    static final prefix = "§2[MonoChest]"
+    static final prefix = "§2[MonoChest]§r"
     static private Map<String,Object> ymlConfig;
     static String worldName;
     static int maxEnters;
+    static public Map<String,String> messages;
     private EventListener eventListener = null;
 
     public void onEnable(){
-        FileManager.createConfigIfNotExists()
         initializeConfig()
         worldName = ymlConfig.startPosition.world
 
@@ -88,19 +70,21 @@ class Main extends JavaPlugin {
 
         playerTeleportBackMap = FileManager.loadPlayerTeleportBacks();
 
+        messages = FileManager.getMessages()
+
         // Add command listener
 
         getCommand("monoExit").executor = { sender, cmd, label, args ->
             if(!(sender instanceof Player)) return false
             if(playerTeleportBackMap[sender.uniqueId] == null
             || playerTeleportBackMap[sender.uniqueId].size() == 0) {
-                sender.sendMessage(prefix + "§6 You has not more teleport locations.")
+                sendMessage(sender,"§6"+messages.cantTeleportBack)
                 return true
             }
             Location l = playerTeleportBackMap[sender.uniqueId].pop().value
             sender.teleport l
             sender.playSound(sender.location, Sound.CHEST_CLOSE,1,1)
-            sender.sendMessage(prefix + "§a You returned back!")
+            sendMessage(sender,"§6"+messages.returnedBack)
             return true
         }
 
@@ -174,6 +158,10 @@ class Main extends JavaPlugin {
 
     public static ChestRoom(Block b){
         return rooms.find{it.blocks.contains(b)}
+    }
+
+    static sendMessage(Player player, String str){
+        player.sendMessage(prefix+" "+str)
     }
 
 }
